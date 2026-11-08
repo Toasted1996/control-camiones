@@ -4,3 +4,6 @@ node_modules/
 .env*.local
 .superpowers/
 .netlify/
+*.tsbuildinfo
+next-env.d.ts
+/coverage
