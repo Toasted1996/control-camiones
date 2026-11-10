@@ -7,3 +7,6 @@ node_modules/
 *.tsbuildinfo
 next-env.d.ts
 /coverage
+
+# Datos reales del negocio (placas, nombres): no van al repositorio
+supabase/datos-reales.sql
