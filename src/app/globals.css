@@ -19,3 +19,67 @@ body {
   background: var(--fondo);
   color: var(--tinta);
 }
+
+/* Placa amarilla colombiana */
+.placa {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 11rem;
+  padding: 0.2rem 1rem 0.35rem;
+  background: #fcd116;
+  color: #111;
+  border: 3px solid #111;
+  border-radius: 0.6rem;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+  animation: placa-entra 600ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+  transition: transform 150ms ease;
+}
+.placa:active {
+  transform: scale(0.96);
+}
+.placa-pais {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+}
+.placa-texto {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.12em;
+}
+/* Brillo que cruza la placa una vez al aparecer */
+.placa::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.6) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: placa-brillo 900ms ease-out 500ms both;
+}
+
+@keyframes placa-entra {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) rotate(-3deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes placa-brillo {
+  to {
+    transform: translateX(120%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placa,
+  .placa::after {
+    animation: none;
+  }
+}
