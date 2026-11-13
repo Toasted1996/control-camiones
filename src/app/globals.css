@@ -77,9 +77,62 @@ body {
   }
 }
 
+/* Camión animado (carga / descarga) */
+.camion {
+  width: 8rem;
+  overflow: visible;
+}
+.camion-caja {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.camion-carga .camion-caja {
+  animation: caja-entra 500ms cubic-bezier(0.3, 0.8, 0.4, 1) both;
+}
+.camion-carga {
+  animation: camion-rebote 400ms ease-out 1300ms;
+}
+/* En descarga las cajas parten visibles y terminan fuera; sin animación el camión queda vacío. */
+.camion-descarga .camion-caja {
+  opacity: 0;
+  animation: caja-sale 900ms ease-in both;
+}
+
+@keyframes caja-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes caja-sale {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  40% {
+    opacity: 1;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-34px, 36px) rotate(-25deg);
+  }
+}
+@keyframes camion-rebote {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .placa,
-  .placa::after {
-    animation: none;
+  .placa::after,
+  .camion,
+  .camion-caja {
+    animation: none !important;
   }
 }

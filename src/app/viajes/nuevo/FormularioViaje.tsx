@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { comisionDe } from "@/dominio/cobros";
+import { useState, useTransition, type FormEvent } from "react";
+import CamionAnimado from "@/components/CamionAnimado";
+import { comisionDe, saldoCuenta } from "@/dominio/cobros";
 import { formatoCOP } from "@/dominio/dinero";
+import { crearViaje } from "./acciones";
 
 type Camion = { id: string; placa: string };
 type Conductor = { id: string; nombre: string; comision_pct: number; camion_id: string | null };
@@ -43,6 +45,12 @@ export default function FormularioViaje({
   const [regreso, setRegreso] = useState<Tramo>(tramoVacio);
   const [condicion, setCondicion] = useState(CONDICIONES[0].valor);
 
+  const [error, setError] = useState("");
+  // Qué animación mostrar; `intento` cambia la key para que se repita en cada envío.
+  const [aviso, setAviso] = useState<"guardado" | "duplicado" | null>(null);
+  const [intento, setIntento] = useState(0);
+  const [pendiente, empezar] = useTransition();
+
   // Al elegir camión se propone su conductor; se puede cambiar a mano.
   function elegirCamion(id: string) {
     setCamionId(id);
@@ -59,9 +67,45 @@ export default function FormularioViaje({
   const conAnticipo = condicion.startsWith("anticipo");
   // Cada tramo (ida y regreso) puede traer su propio anticipo del cliente.
   const anticipoTotal = tramos.reduce((s, t) => s + aPesos(t.anticipo), 0);
+  // Saldo por cobrar: el anticipo es un pago que baja la cuenta (saldoCuenta, dominio).
+  const saldo = tramos.reduce(
+    (s, t) => s + saldoCuenta(aPesos(t.monto), [{ monto: aPesos(t.anticipo), retefuente: 0, ica: 0 }]),
+    0,
+  );
+
+  function guardar(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError("");
+    setAviso(null);
+    empezar(async () => {
+      const r = await crearViaje({
+        camionId,
+        conductorId,
+        clienteId,
+        fecha,
+        condicionPago: condicion,
+        tramos: tramos.map((t) => ({
+          manifiesto: t.manifiesto,
+          origen: t.origen,
+          destino: t.destino,
+          monto: aPesos(t.monto),
+          anticipo: aPesos(t.anticipo),
+        })),
+      });
+      setIntento((n) => n + 1);
+      if (r.ok) {
+        setAviso("guardado");
+        setIda(tramoVacio);
+        setRegreso(tramoVacio);
+      } else {
+        setError(r.error);
+        if (r.duplicado) setAviso("duplicado");
+      }
+    });
+  }
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+    <form onSubmit={guardar} className="space-y-4">
       <label className="block">
         <span className="text-sm">Camión</span>
         <select value={camionId} onChange={(e) => elegirCamion(e.target.value)} required className={campo}>
@@ -123,10 +167,23 @@ export default function FormularioViaje({
         <Fila texto="Total del viaje" valor={formatoCOP(total)} />
         <Fila texto={`Comisión del conductor (${pct}%)`} valor={formatoCOP(comision)} />
         {conAnticipo && <Fila texto="Anticipo del cliente" valor={formatoCOP(anticipoTotal)} />}
+        {conAnticipo && <Fila texto="Saldo por cobrar" valor={formatoCOP(saldo)} />}
       </section>
 
-      <button disabled className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white opacity-60">
-        Guardar viaje
+      {aviso && (
+        <div key={intento} className="flex justify-center">
+          <CamionAnimado modo={aviso === "guardado" ? "carga" : "descarga"} />
+        </div>
+      )}
+      {error && <p role="alert" className="text-center text-sm text-red-700">{error}</p>}
+      {aviso === "guardado" && (
+        <p role="status" className="text-center text-sm font-semibold text-primario">Viaje guardado</p>
+      )}
+      <button
+        disabled={pendiente}
+        className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white disabled:opacity-60"
+      >
+        {pendiente ? "Guardando..." : "Guardar viaje"}
       </button>
     </form>
   );
