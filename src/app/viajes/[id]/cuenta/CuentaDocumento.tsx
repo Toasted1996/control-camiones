@@ -19,6 +19,8 @@ export default function CuentaDocumento({
 }) {
   const [quien, setQuien] = useState("");
   const [nit, setNit] = useState("");
+  const [direccion, setDireccion] = useState("");
+  const [telefono, setTelefono] = useState("");
   const [banco, setBanco] = useState("");
   const [tipoCuenta, setTipoCuenta] = useState("Ahorros");
   const [numero, setNumero] = useState("");
@@ -34,6 +36,14 @@ export default function CuentaDocumento({
         <label className="block">
           <span className="text-sm">Cédula / NIT</span>
           <input value={nit} onChange={(e) => setNit(e.target.value)} className={campo} />
+        </label>
+        <label className="block">
+          <span className="text-sm">Dirección</span>
+          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={campo} />
+        </label>
+        <label className="block">
+          <span className="text-sm">Teléfono</span>
+          <input inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className={campo} />
         </label>
         <label className="block">
           <span className="text-sm">Banco</span>
@@ -72,23 +82,22 @@ export default function CuentaDocumento({
             <h2 className="mb-1 font-bold uppercase">Servicio de transporte</h2>
             <p>Fecha del servicio: {v.fecha}</p>
             <p>Vehículo: {v.placa}</p>
-            <p>Conductor: {v.conductor}</p>
           </section>
         </div>
 
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-y border-black text-left">
-              <th className="py-2 pr-2">Tramo / manifiesto</th>
+              <th className="py-2 pr-2">Tramo</th>
               <th className="py-2 pr-2">Ruta</th>
               <th className="py-2 text-right">Valor</th>
             </tr>
           </thead>
           <tbody>
             {v.tramos.map((t) => (
-              <tr key={t.manifiesto} className="border-b border-black/20 align-top">
+              <tr key={t.sentido} className="border-b border-black/20 align-top">
                 <td className="py-2 pr-2">
-                  {t.sentido === "ida" ? "Ida" : "Regreso"} · {t.manifiesto}
+                  {t.sentido === "ida" ? "Ida" : "Regreso"}
                   {t.anticipo > 0 && (
                     <span className="block text-tinta/70">Anticipo recibido: {formatoCOP(t.anticipo)}</span>
                   )}
@@ -119,6 +128,8 @@ export default function CuentaDocumento({
           <h2 className="mb-1 font-bold uppercase">Datos para el pago</h2>
           <p>Quien cobra: {quien || "—"}</p>
           <p>Cédula / NIT: {nit || "—"}</p>
+          <p>Dirección: {direccion || "—"}</p>
+          <p>Teléfono: {telefono || "—"}</p>
           <p>Banco: {banco || "—"}</p>
           <p>Tipo de cuenta: {tipoCuenta}</p>
           <p>Número de cuenta: {numero || "—"}</p>
