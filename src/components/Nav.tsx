@@ -17,7 +17,7 @@ export default function Nav() {
   if (ruta === "/ingreso") return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex border-t border-black/10 bg-white">
+    <nav className="fixed inset-x-0 bottom-0 flex border-t print:hidden border-black/10 bg-white">
       {ENTRADAS.map(({ href, texto }) => {
         const activa = href === "/" ? ruta === "/" : ruta.startsWith(href);
         return (

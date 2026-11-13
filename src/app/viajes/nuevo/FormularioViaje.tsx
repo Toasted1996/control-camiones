@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import Link from "next/link";
 import CamionAnimado from "@/components/CamionAnimado";
 import { comisionDe, saldoCuenta } from "@/dominio/cobros";
 import { formatoCOP } from "@/dominio/dinero";
@@ -49,6 +50,7 @@ export default function FormularioViaje({
   // Qué animación mostrar; `intento` cambia la key para que se repita en cada envío.
   const [aviso, setAviso] = useState<"guardado" | "duplicado" | null>(null);
   const [intento, setIntento] = useState(0);
+  const [idGuardado, setIdGuardado] = useState("");
   const [pendiente, empezar] = useTransition();
 
   // Al elegir camión se propone su conductor; se puede cambiar a mano.
@@ -95,6 +97,7 @@ export default function FormularioViaje({
       setIntento((n) => n + 1);
       if (r.ok) {
         setAviso("guardado");
+        setIdGuardado(r.id);
         setIda(tramoVacio);
         setRegreso(tramoVacio);
       } else {
@@ -177,7 +180,10 @@ export default function FormularioViaje({
       )}
       {error && <p role="alert" className="text-center text-sm text-red-700">{error}</p>}
       {aviso === "guardado" && (
-        <p role="status" className="text-center text-sm font-semibold text-primario">Viaje guardado</p>
+        <p role="status" className="text-center text-sm font-semibold text-primario">
+          Viaje guardado ·{" "}
+          <Link href={`/viajes/${idGuardado}`} className="underline">Ver viaje</Link>
+        </p>
       )}
       <button
         disabled={pendiente}
