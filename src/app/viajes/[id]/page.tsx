@@ -48,6 +48,14 @@ export default async function DetalleViaje({ params }: { params: Promise<{ id: s
             <Fila texto="Pagado (anticipo y abonos)" valor={formatoCOP(t.pagado)} />
             <Fila texto="Saldo por cobrar" valor={formatoCOP(t.saldo)} />
             <Fila texto="Comisión del conductor" valor={formatoCOP(t.comision)} />
+            {t.saldo > 0 && t.cuentaId && (
+              <Link
+                href={`/pagos/nuevo?cuenta=${t.cuentaId}`}
+                className="block rounded-lg border border-primario px-3 py-2 text-center text-sm font-semibold text-primario"
+              >
+                Registrar pago
+              </Link>
+            )}
           </section>
         );
       })}

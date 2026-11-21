@@ -7,6 +7,7 @@ export const SELECT_VIAJE =
 
 type Pago = { monto: number; retefuente: number; ica: number; tipo: string };
 type Cuenta = {
+  id: string;
   emitida: boolean;
   fecha_emision: string | null;
   vence: string | null;
@@ -48,6 +49,7 @@ export function resumirViaje(fila: unknown) {
       const anticipo = pagos.filter((p) => p.tipo === "anticipo").reduce((s, p) => s + p.monto, 0);
       const saldo = saldoCuenta(t.monto, pagos);
       return {
+        cuentaId: cuentaDe(t)?.id ?? null,
         sentido: t.sentido,
         manifiesto: t.manifiesto,
         origen: t.origen,
