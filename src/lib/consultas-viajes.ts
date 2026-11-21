@@ -3,9 +3,15 @@ import { estadoViaje, saldoCuenta } from "@/dominio/cobros";
 // Texto del select que comparten la lista, el detalle y la cuenta de cobro.
 export const SELECT_VIAJE =
   "id, fecha, tipo, condicion_pago, clientes(nombre, contacto, plazo_dias), camiones(placa), conductores(nombre), " +
-  "tramos(sentido, manifiesto, origen, destino, monto, comision_monto, cuentas_cobro(id, pagos(monto, retefuente, ica, tipo)))";
+  "tramos(sentido, manifiesto, origen, destino, monto, comision_monto, cuentas_cobro(id, emitida, fecha_emision, vence, pagos(monto, retefuente, ica, tipo)))";
 
 type Pago = { monto: number; retefuente: number; ica: number; tipo: string };
+type Cuenta = {
+  emitida: boolean;
+  fecha_emision: string | null;
+  vence: string | null;
+  pagos: Pago[];
+};
 type Fila = {
   id: string;
   fecha: string;
@@ -22,7 +28,7 @@ type Fila = {
     monto: number;
     comision_monto: number;
     // 1 a 1: PostgREST devuelve objeto; se acepta lista por si cambia.
-    cuentas_cobro: { pagos: Pago[] } | { pagos: Pago[] }[] | null;
+    cuentas_cobro: Cuenta | Cuenta[] | null;
   }[];
 };
 
@@ -31,11 +37,14 @@ type Fila = {
 // Recibe `unknown` porque el cliente de Supabase no tiene tipos generados: la forma la fija SELECT_VIAJE.
 export function resumirViaje(fila: unknown) {
   const f = fila as Fila;
-  const tramos = [...f.tramos]
-    .sort((a) => (a.sentido === "ida" ? -1 : 1))
+  const cuentaDe = (t: Fila["tramos"][number]) =>
+    Array.isArray(t.cuentas_cobro) ? t.cuentas_cobro[0] : t.cuentas_cobro;
+  const ordenados = [...f.tramos].sort((a, b) => Number(b.sentido === "ida") - Number(a.sentido === "ida"));
+  // El documento es uno por viaje y se emite junto: se lee de la cuenta del tramo de ida.
+  const cuentaIda = cuentaDe(ordenados[0]);
+  const tramos = ordenados
     .map((t) => {
-      const cuenta = Array.isArray(t.cuentas_cobro) ? t.cuentas_cobro[0] : t.cuentas_cobro;
-      const pagos = cuenta?.pagos ?? [];
+      const pagos = cuentaDe(t)?.pagos ?? [];
       const anticipo = pagos.filter((p) => p.tipo === "anticipo").reduce((s, p) => s + p.monto, 0);
       const saldo = saldoCuenta(t.monto, pagos);
       return {
@@ -68,7 +77,10 @@ export function resumirViaje(fila: unknown) {
     anticipo: suma("anticipo"),
     pagado,
     saldo: suma("saldo"),
-    estado: estadoViaje(total, pagado),
+    emitida: !!cuentaIda?.emitida,
+    emision: cuentaIda?.fecha_emision ?? null,
+    vence: cuentaIda?.vence ?? null,
+    estado: estadoViaje(total, pagado, !!cuentaIda?.emitida),
   };
 }
 

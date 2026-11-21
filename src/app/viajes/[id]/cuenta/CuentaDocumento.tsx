@@ -1,22 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { formatoCOP } from "@/dominio/dinero";
 import type { ViajeResumen } from "@/lib/consultas-viajes";
+import { emitirCuenta } from "./acciones";
 
 const campo = "mt-1 w-full rounded-lg border border-black/20 bg-white px-3 py-3";
 
 // Formulario (solo en pantalla) + documento imprimible en hoja carta (ver @page en globals.css).
 // Lo que se escribe arriba sale ya impreso; solo la firma queda en blanco.
-export default function CuentaDocumento({
-  v,
-  emision,
-  vence,
-}: {
-  v: ViajeResumen;
-  emision: string;
-  vence: string;
-}) {
+export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
+  const [error, setError] = useState("");
+  const [pendiente, empezar] = useTransition();
+  function emitir() {
+    setError("");
+    empezar(async () => {
+      const r = await emitirCuenta(v.id);
+      if (!r.ok) setError(r.error);
+    });
+  }
+
   const [quien, setQuien] = useState("");
   const [nit, setNit] = useState("");
   const [direccion, setDireccion] = useState("");
@@ -67,8 +70,14 @@ export default function CuentaDocumento({
         <header className="flex items-start justify-between gap-4 border-b-2 border-black pb-3">
           <h1 className="text-xl font-bold uppercase tracking-wide print:text-[22pt]">Cuenta de cobro</h1>
           <div className="text-right">
-            <p>Fecha de emisión: {emision}</p>
-            <p>Vence: {vence}</p>
+            {v.emitida ? (
+              <>
+                <p>Fecha de emisión: {v.emision}</p>
+                <p>Vence: {v.vence}</p>
+              </>
+            ) : (
+              <p className="text-tinta/70 print:hidden">Sin emitir (vista previa)</p>
+            )}
           </div>
         </header>
 
@@ -143,12 +152,23 @@ export default function CuentaDocumento({
         </section>
       </article>
 
-      <button
-        onClick={() => window.print()}
-        className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white print:hidden"
-      >
-        Imprimir / Guardar como PDF
-      </button>
+      {error && <p role="alert" className="text-center text-sm text-red-700 print:hidden">{error}</p>}
+      {v.emitida ? (
+        <button
+          onClick={() => window.print()}
+          className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white print:hidden"
+        >
+          Imprimir / Guardar como PDF
+        </button>
+      ) : (
+        <button
+          onClick={emitir}
+          disabled={pendiente}
+          className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white disabled:opacity-60 print:hidden"
+        >
+          {pendiente ? "Emitiendo..." : "Emitir cuenta de cobro"}
+        </button>
+      )}
     </>
   );
 }

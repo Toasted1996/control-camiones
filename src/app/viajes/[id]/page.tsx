@@ -26,6 +26,9 @@ export default async function DetalleViaje({ params }: { params: Promise<{ id: s
         <p className="text-sm text-tinta/70">
           {v.fecha} · {v.placa} · {v.conductor}
         </p>
+        <p className="text-sm text-tinta/70">
+          {v.emitida ? `Cuenta emitida el ${v.emision} · vence ${v.vence}` : "Cuenta de cobro sin emitir"}
+        </p>
       </div>
 
       {v.tramos.map((t) => {

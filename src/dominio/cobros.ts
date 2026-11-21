@@ -35,11 +35,16 @@ export function saldoCuenta(total: number, pagos: Pago[]): number {
   return total - pagos.reduce((s, p) => s + p.monto + p.retefuente + p.ica, 0);
 }
 
-// Etapa de un viaje para la lista: sin pagos → sin_cobrar; con pagos y saldo → abonado;
-// saldo 0 → pagado. `pagado` incluye retenciones y anticipo (lo mismo que resta saldoCuenta).
-export function estadoViaje(total: number, pagado: number): "sin_cobrar" | "abonado" | "pagado" {
+// Etapa de un viaje para la lista: saldo 0 → pagado; con pagos → abonado; emitida sin pagos → cobrado;
+// sin emitir y sin pagos → sin_cobrar. `pagado` incluye retenciones y anticipo (lo que resta saldoCuenta).
+export function estadoViaje(
+  total: number,
+  pagado: number,
+  emitida: boolean,
+): "sin_cobrar" | "cobrado" | "abonado" | "pagado" {
   if (pagado >= total) return "pagado";
-  return pagado > 0 ? "abonado" : "sin_cobrar";
+  if (pagado > 0) return "abonado";
+  return emitida ? "cobrado" : "sin_cobrar";
 }
 
 // Etapa de la cuenta: sin emitir → sin_cobrar; emitida sin pagos → cobrado;

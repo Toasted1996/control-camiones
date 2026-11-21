@@ -6,10 +6,11 @@ import { resumirViaje, SELECT_VIAJE } from "@/lib/consultas-viajes";
 const FILTROS = [
   { valor: "", texto: "Todos" },
   { valor: "sin_cobrar", texto: "Sin cobrar" },
+  { valor: "cobrado", texto: "Cobrado" },
   { valor: "abonado", texto: "Abonado" },
   { valor: "pagado", texto: "Pagado" },
 ];
-const TEXTO_ESTADO = { sin_cobrar: "Sin cobrar", abonado: "Abonado", pagado: "Pagado" };
+const TEXTO_ESTADO = { sin_cobrar: "Sin cobrar", cobrado: "Cobrado", abonado: "Abonado", pagado: "Pagado" };
 
 // Lista de viajes: busca por manifiesto o cliente y filtra por estado de cobro.
 // Son pocos viajes (3 camiones), así que se trae todo y se filtra aquí.
