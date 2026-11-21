@@ -2,68 +2,71 @@
 
 import { useState, useTransition } from "react";
 import { formatoCOP } from "@/dominio/dinero";
-import type { ViajeResumen } from "@/lib/consultas-viajes";
+import { documentoDe, type DatosPago, type DocumentoCuenta, type ViajeResumen } from "@/lib/consultas-viajes";
 import { emitirCuenta } from "./acciones";
 
 const campo = "mt-1 w-full rounded-lg border border-black/20 bg-white px-3 py-3";
+const sinDatos: DatosPago = { quien: "", nit: "", direccion: "", telefono: "", banco: "", tipoCuenta: "", numero: "" };
 
 // Formulario (solo en pantalla) + documento imprimible en hoja carta (ver @page en globals.css).
-// Lo que se escribe arriba sale ya impreso; solo la firma queda en blanco.
+// Antes de emitir es una vista previa que sigue al formulario; al emitir se guarda completo y de ahí
+// se muestra siempre (histórico). Solo la firma queda en blanco.
 export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
   const [error, setError] = useState("");
   const [pendiente, empezar] = useTransition();
+  const [form, setForm] = useState<DatosPago>({ ...sinDatos, tipoCuenta: "Ahorros" });
+  const poner = (k: keyof DatosPago) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm({ ...form, [k]: e.target.value });
+
+  // Emitida: la copia guardada. Emitida antes de existir la copia (datos de prueba): sin datos de cobro.
+  const doc: DocumentoCuenta = v.emitida ? (v.documento ?? documentoDe(v, sinDatos)) : documentoDe(v, form);
+
   function emitir() {
     setError("");
     empezar(async () => {
-      const r = await emitirCuenta(v.id);
+      const r = await emitirCuenta(v.id, form);
       if (!r.ok) setError(r.error);
     });
   }
 
-  const [quien, setQuien] = useState("");
-  const [nit, setNit] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [banco, setBanco] = useState("");
-  const [tipoCuenta, setTipoCuenta] = useState("Ahorros");
-  const [numero, setNumero] = useState("");
-
   return (
     <>
-      <section className="space-y-3 rounded-lg bg-white p-4 shadow-sm print:hidden">
-        <h2 className="font-semibold">Datos para el pago</h2>
-        <label className="block">
-          <span className="text-sm">Quien cobra (nombre)</span>
-          <input value={quien} onChange={(e) => setQuien(e.target.value)} className={campo} />
-        </label>
-        <label className="block">
-          <span className="text-sm">Cédula / NIT</span>
-          <input value={nit} onChange={(e) => setNit(e.target.value)} className={campo} />
-        </label>
-        <label className="block">
-          <span className="text-sm">Dirección</span>
-          <input value={direccion} onChange={(e) => setDireccion(e.target.value)} className={campo} />
-        </label>
-        <label className="block">
-          <span className="text-sm">Teléfono</span>
-          <input inputMode="tel" value={telefono} onChange={(e) => setTelefono(e.target.value)} className={campo} />
-        </label>
-        <label className="block">
-          <span className="text-sm">Banco</span>
-          <input value={banco} onChange={(e) => setBanco(e.target.value)} className={campo} />
-        </label>
-        <label className="block">
-          <span className="text-sm">Tipo de cuenta</span>
-          <select value={tipoCuenta} onChange={(e) => setTipoCuenta(e.target.value)} className={campo}>
-            <option>Ahorros</option>
-            <option>Corriente</option>
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-sm">Número de cuenta</span>
-          <input inputMode="numeric" value={numero} onChange={(e) => setNumero(e.target.value)} className={campo} />
-        </label>
-      </section>
+      {!v.emitida && (
+        <section className="space-y-3 rounded-lg bg-white p-4 shadow-sm print:hidden">
+          <h2 className="font-semibold">Datos para el pago</h2>
+          <label className="block">
+            <span className="text-sm">Quien cobra (nombre)</span>
+            <input value={form.quien} onChange={poner("quien")} className={campo} />
+          </label>
+          <label className="block">
+            <span className="text-sm">Cédula / NIT</span>
+            <input value={form.nit} onChange={poner("nit")} className={campo} />
+          </label>
+          <label className="block">
+            <span className="text-sm">Dirección</span>
+            <input value={form.direccion} onChange={poner("direccion")} className={campo} />
+          </label>
+          <label className="block">
+            <span className="text-sm">Teléfono</span>
+            <input inputMode="tel" value={form.telefono} onChange={poner("telefono")} className={campo} />
+          </label>
+          <label className="block">
+            <span className="text-sm">Banco</span>
+            <input value={form.banco} onChange={poner("banco")} className={campo} />
+          </label>
+          <label className="block">
+            <span className="text-sm">Tipo de cuenta</span>
+            <select value={form.tipoCuenta} onChange={poner("tipoCuenta")} className={campo}>
+              <option>Ahorros</option>
+              <option>Corriente</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-sm">Número de cuenta</span>
+            <input inputMode="numeric" value={form.numero} onChange={poner("numero")} className={campo} />
+          </label>
+        </section>
+      )}
 
       {/* En pantalla se ve como tarjeta; al imprimir ocupa toda la hoja carta, en tamaño de documento. */}
       <article className="space-y-6 rounded-lg bg-white p-5 text-sm shadow-sm print:space-y-8 print:rounded-none print:p-0 print:text-[12pt] print:shadow-none">
@@ -72,8 +75,8 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
           <div className="text-right">
             {v.emitida ? (
               <>
-                <p>Fecha de emisión: {v.emision}</p>
-                <p>Vence: {v.vence}</p>
+                <p>Fecha de emisión: {doc.emision}</p>
+                <p>Vence: {doc.vence}</p>
               </>
             ) : (
               <p className="text-tinta/70 print:hidden">Sin emitir (vista previa)</p>
@@ -84,13 +87,13 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 print:grid-cols-2">
           <section>
             <h2 className="mb-1 font-bold uppercase">Cliente</h2>
-            <p>{v.cliente.nombre}</p>
-            {v.cliente.contacto && <p className="text-tinta/70">{v.cliente.contacto}</p>}
+            <p>{doc.cliente.nombre}</p>
+            {doc.cliente.contacto && <p className="text-tinta/70">{doc.cliente.contacto}</p>}
           </section>
           <section>
             <h2 className="mb-1 font-bold uppercase">Servicio de transporte</h2>
-            <p>Fecha del servicio: {v.fecha}</p>
-            <p>Vehículo: {v.placa}</p>
+            <p>Fecha del servicio: {doc.fechaServicio}</p>
+            <p>Vehículo: {doc.placa}</p>
           </section>
         </div>
 
@@ -103,7 +106,7 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
             </tr>
           </thead>
           <tbody>
-            {v.tramos.map((t) => (
+            {doc.tramos.map((t) => (
               <tr key={t.sentido} className="border-b border-black/20 align-top">
                 <td className="py-2 pr-2">
                   {t.sentido === "ida" ? "Ida" : "Regreso"}
@@ -121,27 +124,27 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
         <section className="ml-auto w-full space-y-1 sm:w-2/3 print:w-2/3">
           <p className="flex justify-between">
             <span>Valor total del servicio</span>
-            <span>{formatoCOP(v.total)}</span>
+            <span>{formatoCOP(doc.total)}</span>
           </p>
           <p className="flex justify-between">
             <span>(−) Anticipo</span>
-            <span>{formatoCOP(v.anticipo)}</span>
+            <span>{formatoCOP(doc.anticipo)}</span>
           </p>
           <p className="flex justify-between border-t-2 border-black pt-1 text-base font-bold print:text-[14pt]">
             <span>Valor a cobrar</span>
-            <span>{formatoCOP(v.total - v.anticipo)}</span>
+            <span>{formatoCOP(doc.aCobrar)}</span>
           </p>
         </section>
 
         <section className="space-y-1">
           <h2 className="mb-1 font-bold uppercase">Datos para el pago</h2>
-          <p>Quien cobra: {quien || "—"}</p>
-          <p>Cédula / NIT: {nit || "—"}</p>
-          <p>Dirección: {direccion || "—"}</p>
-          <p>Teléfono: {telefono || "—"}</p>
-          <p>Banco: {banco || "—"}</p>
-          <p>Tipo de cuenta: {tipoCuenta}</p>
-          <p>Número de cuenta: {numero || "—"}</p>
+          <p>Quien cobra: {doc.datos.quien || "—"}</p>
+          <p>Cédula / NIT: {doc.datos.nit || "—"}</p>
+          <p>Dirección: {doc.datos.direccion || "—"}</p>
+          <p>Teléfono: {doc.datos.telefono || "—"}</p>
+          <p>Banco: {doc.datos.banco || "—"}</p>
+          <p>Tipo de cuenta: {doc.datos.tipoCuenta || "—"}</p>
+          <p>Número de cuenta: {doc.datos.numero || "—"}</p>
         </section>
 
         <section className="pt-16 print:pt-24">

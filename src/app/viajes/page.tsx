@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatoCOP } from "@/dominio/dinero";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
-import { resumirViaje, SELECT_VIAJE } from "@/lib/consultas-viajes";
+import { resumirViaje, SELECT_VIAJE_LISTA } from "@/lib/consultas-viajes";
 
 const FILTROS = [
   { valor: "", texto: "Todos" },
@@ -21,7 +21,8 @@ export default async function Viajes({
 }) {
   const { q = "", f = "" } = await searchParams;
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.from("viajes").select(SELECT_VIAJE).order("fecha", { ascending: false });
+  const { data, error } = await supabase.from("viajes").select(SELECT_VIAJE_LISTA).order("fecha", { ascending: false });
+  if (error) throw new Error(error.message);
 
   const busca = q.trim().toLowerCase();
   const viajes = (data ?? [])

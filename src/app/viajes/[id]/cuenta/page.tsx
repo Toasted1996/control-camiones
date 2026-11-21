@@ -10,7 +10,8 @@ import CuentaDocumento from "./CuentaDocumento";
 export default async function CuentaDeCobro({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await crearClienteServidor();
-  const { data } = await supabase.from("viajes").select(SELECT_VIAJE).eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("viajes").select(SELECT_VIAJE).eq("id", id).maybeSingle();
+  if (error) throw new Error(error.message);
   if (!data) notFound();
 
   const v = resumirViaje(data);

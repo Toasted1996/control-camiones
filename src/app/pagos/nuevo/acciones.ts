@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { saldoCuenta } from "@/dominio/cobros";
 import { validarPago, type PagoEntrada } from "@/lib/pagos";
+import { uno } from "@/lib/uno";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 
 export type Resultado = { ok: true; viajeId: string } | { ok: false; error: string };
@@ -25,9 +26,7 @@ export async function registrarPago(entrada: PagoEntrada): Promise<Resultado> {
   const { error } = await supabase.from("pagos").insert(validado.datos);
   if (error) return { ok: false, error: "No se pudo guardar el pago" };
 
-  // `tramos` es una relación a uno: PostgREST devuelve objeto (o lista, por si cambia).
-  const tramo = Array.isArray(cuenta.tramos) ? cuenta.tramos[0] : cuenta.tramos;
   revalidatePath("/viajes", "layout");
   revalidatePath("/cobros");
-  return { ok: true, viajeId: tramo.viaje_id };
+  return { ok: true, viajeId: uno(cuenta.tramos).viaje_id };
 }

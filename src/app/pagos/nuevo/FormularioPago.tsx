@@ -2,12 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type FormEvent } from "react";
+import Fila from "@/components/Fila";
 import { saldoCuenta, type Pago } from "@/dominio/cobros";
-import { formatoCOP } from "@/dominio/dinero";
+import { aPesos, formatoCOP } from "@/dominio/dinero";
 import { registrarPago } from "./acciones";
 
 const campo = "mt-1 w-full rounded-lg border border-black/20 bg-white px-3 py-3";
-const aPesos = (texto: string) => Number(texto.replace(/\D/g, "")) || 0;
 
 export default function FormularioPago({
   cuentaId,
@@ -135,14 +135,5 @@ export default function FormularioPago({
         {pendiente ? "Guardando..." : "Guardar pago"}
       </button>
     </form>
-  );
-}
-
-function Fila({ texto, valor }: { texto: string; valor: string }) {
-  return (
-    <p className="flex justify-between text-sm">
-      <span className="text-tinta/70">{texto}</span>
-      <span className="font-semibold">{valor}</span>
-    </p>
   );
 }

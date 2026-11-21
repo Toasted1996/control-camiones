@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import Fila from "@/components/Fila";
 import { rendicionAnticipo } from "@/dominio/anticipo";
 import { formatoCOP } from "@/dominio/dinero";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
@@ -9,10 +10,12 @@ import { resumirViaje, SELECT_VIAJE } from "@/lib/consultas-viajes";
 export default async function DetalleViaje({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await crearClienteServidor();
-  const [{ data }, { data: gastos }] = await Promise.all([
+  const [{ data, error }, { data: gastos }] = await Promise.all([
     supabase.from("viajes").select(SELECT_VIAJE).eq("id", id).maybeSingle(),
     supabase.from("gastos").select("monto").eq("viaje_id", id),
   ]);
+  // Un error de la base (p. ej. una columna que falta) no es "no encontrado": se muestra como error.
+  if (error) throw new Error(error.message);
   if (!data) notFound();
 
   const v = resumirViaje(data);
@@ -77,14 +80,5 @@ export default async function DetalleViaje({ params }: { params: Promise<{ id: s
         Ver cuenta de cobro
       </Link>
     </main>
-  );
-}
-
-function Fila({ texto, valor }: { texto: string; valor: string }) {
-  return (
-    <p className="flex justify-between text-sm">
-      <span className="text-tinta/70">{texto}</span>
-      <span className="font-semibold">{valor}</span>
-    </p>
   );
 }

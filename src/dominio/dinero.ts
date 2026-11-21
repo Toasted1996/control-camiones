@@ -5,6 +5,9 @@ const cop = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
+// Texto escrito por el usuario → pesos enteros (ignora puntos, comas y letras; vacío = 0).
+export const aPesos = (texto: string): number => Number(texto.replace(/\D/g, "")) || 0;
+
 // Convierte un entero de pesos en texto para mostrar, p. ej. 1200000 → "$ 1.200.000".
 export function formatoCOP(n: number): string {
   return cop.format(n);
