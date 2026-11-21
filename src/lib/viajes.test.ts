@@ -5,7 +5,7 @@ const tramo = { manifiesto: "100", origen: "", destino: "", monto: 1_000_000, an
 const base: ViajeEntrada = {
   camionId: "c",
   conductorId: "d",
-  clienteId: "k",
+  cliente: "Andina",
   fecha: "2026-11-11",
   condicionPago: "al_finalizar",
   tramos: [tramo],
@@ -50,7 +50,7 @@ describe("armarViaje", () => {
     ["manifiesto vacío", { ...base, tramos: [{ ...tramo, manifiesto: "  " }] }],
     ["anticipo mayor al monto", { ...base, condicionPago: "anticipo_saldo_plazo", tramos: [{ ...tramo, anticipo: 2_000_000 }] }],
     ["manifiestos repetidos", { ...base, tramos: [tramo, { ...tramo }] }],
-    ["sin cliente", { ...base, clienteId: "" }],
+    ["sin empresa", { ...base, cliente: "  " }],
     ["fecha mala", { ...base, fecha: "11/11/2026" }],
   ])("rechaza: %s", (_nombre, entrada) => {
     expect(armarViaje(entrada, 24).ok).toBe(false);

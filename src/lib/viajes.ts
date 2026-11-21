@@ -11,7 +11,7 @@ export type TramoEntrada = {
 export type ViajeEntrada = {
   camionId: string;
   conductorId: string;
-  clienteId: string;
+  cliente: string; // nombre de la empresa: la acción la busca o la crea y agrega su cliente_id
   fecha: string; // ISO yyyy-mm-dd
   condicionPago: string;
   tramos: TramoEntrada[]; // 1 = solo ida, 2 = ida y regreso
@@ -19,12 +19,14 @@ export type ViajeEntrada = {
 
 const CONDICIONES = ["al_finalizar", "anticipo_saldo_finalizar", "anticipo_saldo_plazo", "a_plazo"];
 
-// Valida la entrada y arma el paquete que espera la función crear_viaje (0003). La comisión se calcula
-// aquí con comisionDe y se guarda por tramo; la base de datos no la recalcula.
+// Valida la entrada y arma el paquete que espera la función crear_viaje (0003), salvo cliente_id: la
+// empresa se busca o se crea después (buscar_o_crear_cliente) y la acción lo agrega. La comisión se
+// calcula aquí con comisionDe y se guarda por tramo; la base de datos no la recalcula.
 export function armarViaje(e: ViajeEntrada, comisionPct: number) {
   const error = (mensaje: string) => ({ ok: false as const, error: mensaje });
 
-  if (!e.camionId || !e.conductorId || !e.clienteId) return error("Falta elegir camión, conductor o cliente");
+  if (!e.camionId || !e.conductorId) return error("Falta elegir camión o conductor");
+  if (!e.cliente.trim()) return error("Falta escribir la empresa");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(e.fecha)) return error("La fecha no es válida");
   if (!CONDICIONES.includes(e.condicionPago)) return error("La condición de pago no es válida");
   if (e.tramos.length < 1 || e.tramos.length > 2) return error("Un viaje tiene uno o dos tramos");
@@ -45,7 +47,6 @@ export function armarViaje(e: ViajeEntrada, comisionPct: number) {
     datos: {
       camion_id: e.camionId,
       conductor_id: e.conductorId,
-      cliente_id: e.clienteId,
       fecha: e.fecha,
       tipo: e.tramos.length === 2 ? "ida_regreso" : "ida",
       condicion_pago: e.condicionPago,

@@ -1,3 +1,4 @@
+import { hoyBogota } from "@/lib/hoy";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
 import FormularioViaje from "./FormularioViaje";
 
@@ -15,9 +16,6 @@ export default async function NuevoViaje() {
     supabase.from("clientes").select("id, nombre").order("nombre"),
   ]);
 
-  // "Hoy" en Colombia, calculado aquí para que servidor y navegador coincidan.
-  const hoy = new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-
   return (
     <main className="mx-auto w-full max-w-md p-4">
       <h1 className="mb-4 text-2xl font-semibold">Nuevo viaje</h1>
@@ -25,7 +23,7 @@ export default async function NuevoViaje() {
         camiones={camiones.data ?? []}
         conductores={conductores.data ?? []}
         clientes={clientes.data ?? []}
-        hoy={hoy}
+        hoy={hoyBogota()}
       />
     </main>
   );

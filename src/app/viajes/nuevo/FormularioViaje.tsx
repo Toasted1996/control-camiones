@@ -3,8 +3,10 @@
 import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import CamionAnimado from "@/components/CamionAnimado";
+import Fila from "@/components/Fila";
 import { comisionDe, saldoCuenta } from "@/dominio/cobros";
-import { formatoCOP } from "@/dominio/dinero";
+import { aPesos, formatoCOP } from "@/dominio/dinero";
+import { claveNombre } from "@/lib/clientes";
 import { crearViaje } from "./acciones";
 
 type Camion = { id: string; placa: string };
@@ -19,9 +21,6 @@ const CONDICIONES = [
 ];
 
 const campo = "mt-1 w-full rounded-lg border border-black/20 bg-white px-3 py-3";
-
-// Los montos se escriben como texto y se convierten a entero de pesos.
-const aPesos = (texto: string) => Number(texto.replace(/\D/g, "")) || 0;
 
 type Tramo = { manifiesto: string; origen: string; destino: string; monto: string; anticipo: string };
 const tramoVacio: Tramo = { manifiesto: "", origen: "", destino: "", monto: "", anticipo: "" };
@@ -39,7 +38,8 @@ export default function FormularioViaje({
 }) {
   const [camionId, setCamionId] = useState("");
   const [conductorId, setConductorId] = useState("");
-  const [clienteId, setClienteId] = useState("");
+  const [cliente, setCliente] = useState("");
+  const [clienteNuevo, setClienteNuevo] = useState(false);
   const [fecha, setFecha] = useState(hoy);
   const [idaRegreso, setIdaRegreso] = useState(false);
   const [ida, setIda] = useState<Tramo>(tramoVacio);
@@ -60,6 +60,7 @@ export default function FormularioViaje({
     if (asignado) setConductorId(asignado.id);
   }
 
+  const existente = clientes.find((c) => claveNombre(c.nombre) === claveNombre(cliente));
   const conductor = conductores.find((c) => c.id === conductorId);
   const pct = conductor?.comision_pct ?? 24;
   const tramos = idaRegreso ? [ida, regreso] : [ida];
@@ -83,7 +84,7 @@ export default function FormularioViaje({
       const r = await crearViaje({
         camionId,
         conductorId,
-        clienteId,
+        cliente,
         fecha,
         condicionPago: condicion,
         tramos: tramos.map((t) => ({
@@ -98,6 +99,7 @@ export default function FormularioViaje({
       if (r.ok) {
         setAviso("guardado");
         setIdGuardado(r.id);
+        setClienteNuevo(r.clienteNuevo);
         setIda(tramoVacio);
         setRegreso(tramoVacio);
       } else {
@@ -126,11 +128,24 @@ export default function FormularioViaje({
       </label>
 
       <label className="block">
-        <span className="text-sm">Cliente</span>
-        <select value={clienteId} onChange={(e) => setClienteId(e.target.value)} required className={campo}>
-          <option value="">Elige un cliente</option>
-          {clientes.map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-        </select>
+        <span className="text-sm">Empresa</span>
+        <input
+          value={cliente}
+          onChange={(e) => setCliente(e.target.value)}
+          list="empresas"
+          autoComplete="off"
+          required
+          className={campo}
+        />
+        <datalist id="empresas">
+          {clientes.map((c) => <option key={c.id} value={c.nombre} />)}
+        </datalist>
+        {/* Aviso en vivo con la misma regla de la base: si ya existe se reutiliza, si no se crea al guardar. */}
+        {cliente.trim() && (
+          <span className="mt-1 block text-sm text-tinta/70">
+            {existente ? `Ya existe: se usará ${existente.nombre}` : "Empresa nueva: se creará al guardar"}
+          </span>
+        )}
       </label>
 
       <label className="block">
@@ -181,7 +196,7 @@ export default function FormularioViaje({
       {error && <p role="alert" className="text-center text-sm text-red-700">{error}</p>}
       {aviso === "guardado" && (
         <p role="status" className="text-center text-sm font-semibold text-primario">
-          Viaje guardado ·{" "}
+          Viaje guardado{clienteNuevo && " · Empresa nueva creada"} ·{" "}
           <Link href={`/viajes/${idGuardado}`} className="underline">Ver viaje</Link>
         </p>
       )}
@@ -192,15 +207,6 @@ export default function FormularioViaje({
         {pendiente ? "Guardando..." : "Guardar viaje"}
       </button>
     </form>
-  );
-}
-
-function Fila({ texto, valor }: { texto: string; valor: string }) {
-  return (
-    <p className="flex justify-between text-sm">
-      <span className="text-tinta/70">{texto}</span>
-      <span className="font-semibold">{valor}</span>
-    </p>
   );
 }
 
