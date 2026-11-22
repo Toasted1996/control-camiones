@@ -74,6 +74,13 @@ export default async function DetalleViaje({ params }: { params: Promise<{ id: s
       )}
 
       <Link
+        href={`/gastos/nuevo?viaje=${v.id}`}
+        className="block rounded-lg border border-primario px-3 py-3 text-center font-semibold text-primario"
+      >
+        Agregar gasto
+      </Link>
+
+      <Link
         href={`/viajes/${v.id}/cuenta`}
         className="block rounded-lg bg-primario px-3 py-3 text-center font-semibold text-white"
       >
