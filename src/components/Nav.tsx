@@ -7,11 +7,10 @@ const ENTRADAS = [
   { href: "/", texto: "Inicio" },
   { href: "/viajes", texto: "Viajes" },
   { href: "/cobros", texto: "Cobros" },
-  { href: "/camiones", texto: "Camiones" },
   { href: "/mas", texto: "Más" },
 ];
 
-// Navegación superior fija de 5 entradas (abajo a la derecha Netlify pone su distintivo, que no se
+// Navegación superior fija de 4 entradas (abajo a la derecha Netlify pone su distintivo, que no se
 // puede mover). No se muestra en la pantalla de ingreso.
 export default function Nav() {
   const ruta = usePathname();
@@ -21,7 +20,8 @@ export default function Nav() {
     <nav className="sticky top-0 z-10 border-b border-black/10 bg-white print:hidden">
       <div className="mx-auto flex max-w-md">
         {ENTRADAS.map(({ href, texto }) => {
-          const activa = href === "/" ? ruta === "/" : ruta.startsWith(href);
+          // El detalle de un camión se abre desde el Inicio, así que cuenta como Inicio.
+          const activa = href === "/" ? ruta === "/" || ruta.startsWith("/camiones") : ruta.startsWith(href);
           return (
             <Link
               key={href}

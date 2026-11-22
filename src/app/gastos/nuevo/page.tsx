@@ -5,8 +5,12 @@ import FormularioGasto from "./FormularioGasto";
 
 // Nuevo gasto. Con ?viaje=ID el gasto queda asociado a ese viaje (y a su camión); sin él, el gasto
 // es del camión que se elija y se puede asociar opcionalmente a uno de sus viajes recientes.
-export default async function NuevoGasto({ searchParams }: { searchParams: Promise<{ viaje?: string }> }) {
-  const { viaje: viajeId } = await searchParams;
+export default async function NuevoGasto({
+  searchParams,
+}: {
+  searchParams: Promise<{ viaje?: string; camion?: string }>;
+}) {
+  const { viaje: viajeId, camion: camionId } = await searchParams;
   const supabase = await crearClienteServidor();
   const [camiones, viajes] = await Promise.all([
     supabase.from("camiones").select("id, placa").eq("activo", true).order("placa"),
@@ -37,6 +41,7 @@ export default async function NuevoGasto({ searchParams }: { searchParams: Promi
         camiones={camiones.data}
         viajes={lista}
         viajeInicial={lista.find((v) => v.id === viajeId) ?? null}
+        camionInicial={camiones.data.some((c) => c.id === camionId) ? camionId! : ""}
         hoy={hoyBogota()}
       />
     </main>

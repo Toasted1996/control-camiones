@@ -15,15 +15,17 @@ export default function FormularioGasto({
   camiones,
   viajes,
   viajeInicial,
+  camionInicial,
   hoy,
 }: {
   camiones: Camion[];
   viajes: Viaje[];
   viajeInicial: Viaje | null;
+  camionInicial: string; // camión preelegido (desde el detalle del camión); se puede cambiar
   hoy: string;
 }) {
   const router = useRouter();
-  const [camionId, setCamionId] = useState(viajeInicial?.camionId ?? "");
+  const [camionId, setCamionId] = useState(viajeInicial?.camionId ?? camionInicial);
   const [viajeId, setViajeId] = useState(viajeInicial?.id ?? "");
   const [fecha, setFecha] = useState(hoy);
   const [tipo, setTipo] = useState(TIPOS_GASTO[0].valor);
@@ -50,7 +52,7 @@ export default function FormularioGasto({
         km: km.trim() ? aPesos(km) : null,
         nota,
       });
-      if (r.ok) router.push(r.viajeId ? `/viajes/${r.viajeId}` : "/");
+      if (r.ok) router.push(r.viajeId ? `/viajes/${r.viajeId}` : `/camiones/${camionId}?vista=gastos`);
       else setError(r.error);
     });
   }
