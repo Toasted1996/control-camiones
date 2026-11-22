@@ -3,13 +3,15 @@
 export default function Placa({
   placa,
   indice = 0,
+  grande = false,
 }: {
   placa: string;
   indice?: number;
+  grande?: boolean;
 }) {
   return (
     <div
-      className="placa"
+      className={grande ? "placa placa-grande" : "placa"}
       style={{ animationDelay: `${indice * 120}ms` }}
       aria-label={`Placa ${placa}`}
     >
