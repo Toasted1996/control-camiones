@@ -11,28 +11,31 @@ const ENTRADAS = [
   { href: "/mas", texto: "Más" },
 ];
 
-// Navegación inferior de 5 entradas. No se muestra en la pantalla de ingreso.
+// Navegación superior fija de 5 entradas (abajo a la derecha Netlify pone su distintivo, que no se
+// puede mover). No se muestra en la pantalla de ingreso.
 export default function Nav() {
   const ruta = usePathname();
   if (ruta === "/ingreso") return null;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 flex border-t print:hidden border-black/10 bg-white">
-      {ENTRADAS.map(({ href, texto }) => {
-        const activa = href === "/" ? ruta === "/" : ruta.startsWith(href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={activa ? "page" : undefined}
-            className={`flex-1 py-4 text-center text-sm ${
-              activa ? "font-bold text-primario" : "text-tinta/70"
-            }`}
-          >
-            {texto}
-          </Link>
-        );
-      })}
+    <nav className="sticky top-0 z-10 border-b border-black/10 bg-white print:hidden">
+      <div className="mx-auto flex max-w-md">
+        {ENTRADAS.map(({ href, texto }) => {
+          const activa = href === "/" ? ruta === "/" : ruta.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              aria-current={activa ? "page" : undefined}
+              className={`flex-1 border-b-2 py-4 text-center text-sm ${
+                activa ? "border-primario font-bold text-primario" : "border-transparent text-tinta/70"
+              }`}
+            >
+              {texto}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

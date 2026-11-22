@@ -16,9 +16,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es" className={`${manrope.variable} h-full antialiased`}>
+      {/* pb-16 deja libre el final de la página para el distintivo de Netlify (abajo a la derecha). */}
       <body className="min-h-full flex flex-col pb-16">
-        {children}
         <Nav />
+        {children}
       </body>
     </html>
   );
