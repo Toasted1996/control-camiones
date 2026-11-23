@@ -32,7 +32,8 @@ export type DocumentoCuenta = {
   tramos: { sentido: string; origen: string | null; destino: string | null; monto: number; anticipo: number }[];
   total: number;
   anticipo: number;
-  aCobrar: number; // total − anticipo
+  // Lo que falta por cobrar: ya descuenta abonos y retenciones, pero el documento no los muestra.
+  aCobrar: number;
   datos: DatosPago;
   emision: string | null; // null en la vista previa; la base los fija al emitir
   vence: string | null;
@@ -54,7 +55,7 @@ export function documentoDe(v: ViajeResumen, datos: DatosPago): DocumentoCuenta 
     })),
     total: v.total,
     anticipo: v.anticipo,
-    aCobrar: v.total - v.anticipo,
+    aCobrar: v.saldo, // tiene en cuenta todos los pagos y retenciones (saldoCuenta)
     datos,
     emision: v.emision,
     vence: v.vence,

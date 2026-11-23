@@ -23,6 +23,7 @@ export async function emitirCuenta(
   if (!data) return { ok: false, error: "No se encontró el viaje" };
 
   const documento = documentoDe(resumirViaje(data), limpios);
+  if (documento.aCobrar <= 0) return { ok: false, error: "Este viaje ya está pagado: no hay nada por cobrar" };
   const { data: emitida, error } = await supabase.rpc("emitir_cuenta", { p_viaje: viajeId, p_documento: documento });
   if (error) return { ok: false, error: "No se pudo emitir la cuenta de cobro" };
   revalidatePath(`/viajes/${viajeId}`, "layout");

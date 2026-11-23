@@ -112,8 +112,7 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
                   {t.sentido === "ida" ? "Ida" : "Regreso"}
                   {t.anticipo > 0 && (
                     <span className="block text-tinta/70">Anticipo recibido: {formatoCOP(t.anticipo)}</span>
-                  )}
-                </td>
+                  )}                </td>
                 <td className="py-2 pr-2">{t.origen || t.destino ? `${t.origen ?? "—"} → ${t.destino ?? "—"}` : "—"}</td>
                 <td className="py-2 text-right">{formatoCOP(t.monto)}</td>
               </tr>
@@ -164,13 +163,20 @@ export default function CuentaDocumento({ v }: { v: ViajeResumen }) {
           Imprimir / Guardar como PDF
         </button>
       ) : (
-        <button
-          onClick={emitir}
-          disabled={pendiente}
-          className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white disabled:opacity-60 print:hidden"
-        >
-          {pendiente ? "Emitiendo..." : "Emitir cuenta de cobro"}
-        </button>
+        <>
+          {doc.aCobrar <= 0 && (
+            <p role="note" className="rounded-lg bg-amber-100 p-3 text-sm text-amber-900 print:hidden">
+              Este viaje ya está pagado: no hay nada por cobrar.
+            </p>
+          )}
+          <button
+            onClick={emitir}
+            disabled={pendiente || doc.aCobrar <= 0}
+            className="w-full rounded-lg bg-primario px-3 py-3 font-semibold text-white disabled:opacity-60 print:hidden"
+          >
+            {pendiente ? "Emitiendo..." : "Emitir cuenta de cobro"}
+          </button>
+        </>
       )}
     </>
   );
