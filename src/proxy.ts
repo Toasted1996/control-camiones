@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { COOKIE_INICIO, sesionVencida } from "@/lib/sesion";
 
 // Guardián de rutas: refresca la sesión de Supabase en cada petición y manda a
 // /ingreso a quien no haya iniciado sesión (y fuera de /ingreso a quien sí).
@@ -32,6 +33,26 @@ export async function proxy(request: NextRequest) {
   }
   if (user && enIngreso) {
     return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (user) {
+    const marca = request.cookies.get(COOKIE_INICIO)?.value;
+    if (!marca) {
+      // Primera petición tras ingresar: arranca el plazo de 10 días.
+      respuesta.cookies.set(COOKIE_INICIO, String(Date.now()), {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 400,
+      });
+    } else if (sesionVencida(marca, Date.now())) {
+      await supabase.auth.signOut(); // deja en `respuesta` las cookies de Supabase ya borradas
+      const fuera = NextResponse.redirect(new URL("/ingreso", request.url));
+      respuesta.cookies.getAll().forEach((c) => fuera.cookies.set(c));
+      fuera.cookies.delete(COOKIE_INICIO);
+      return fuera;
+    }
   }
   return respuesta;
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cerrarSesion } from "./acciones";
 
 // Más: acceso a lo que no cabe en la barra. Irán entrando conductores, respaldo y avisos.
 const ENTRADAS = [{ href: "/clientes", texto: "Clientes", detalle: "Plazo de pago y retenciones" }];
@@ -17,6 +18,11 @@ export default function Mas() {
           </li>
         ))}
       </ul>
+      <form action={cerrarSesion}>
+        <button className="w-full rounded-lg border border-black/20 bg-white px-3 py-3 font-semibold text-red-700">
+          Cerrar sesión
+        </button>
+      </form>
     </main>
   );
 }
