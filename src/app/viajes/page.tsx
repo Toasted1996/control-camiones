@@ -12,28 +12,38 @@ const FILTROS = [
 ];
 const TEXTO_ESTADO = { sin_cobrar: "Sin cobrar", cobrado: "Cobrado", abonado: "Abonado", pagado: "Pagado" };
 
-// Lista de viajes: busca por manifiesto o cliente y filtra por estado de cobro.
-// Son pocos viajes (3 camiones), así que se trae todo y se filtra aquí.
+const PAGINA = 20;
+const MAX = 500;
+
+// Lista de viajes: busca por manifiesto o cliente y filtra por estado de cobro, todo en la base
+// (vista viajes_lista). Trae de a 20, los más recientes primero; "Ver más" sube el tope (n).
 export default async function Viajes({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; f?: string }>;
+  searchParams: Promise<{ q?: string; f?: string; n?: string }>;
 }) {
-  const { q = "", f = "" } = await searchParams;
+  const { q = "", f = "", n } = await searchParams;
+  const tope = Math.min(MAX, Math.max(PAGINA, Number(n) || PAGINA));
   const supabase = await crearClienteServidor();
-  const { data, error } = await supabase.from("viajes").select(SELECT_VIAJE_LISTA).order("fecha", { ascending: false });
-  if (error) throw new Error(error.message);
 
-  const busca = q.trim().toLowerCase();
-  const viajes = (data ?? [])
-    .map(resumirViaje)
-    .filter((v) => !f || v.estado === f)
-    .filter(
-      (v) =>
-        !busca ||
-        v.cliente.nombre.toLowerCase().includes(busca) ||
-        v.tramos.some((t) => t.manifiesto.toLowerCase().includes(busca)),
-    );
+  // Los símbolos de la sintaxis de filtros de PostgREST se quitan del texto buscado.
+  const busca = q.trim().replace(/[,()%*\\]/g, " ");
+  let lista = supabase.from("viajes_lista").select("id").order("fecha", { ascending: false }).order("creado_en", { ascending: false });
+  if (f) lista = lista.eq("estado", f);
+  if (busca) lista = lista.or(`cliente.ilike.%${busca}%,manifiestos.ilike.%${busca}%`);
+  // Se pide uno de más para saber si hay más viajes que mostrar.
+  const ids = await lista.limit(tope + 1);
+  if (ids.error) throw new Error(ids.error.message);
+  const hayMas = ids.data.length > tope;
+  const orden = ids.data.slice(0, tope).map((x: { id: string }) => x.id);
+
+  // El detalle de esos viajes (tramos, pagos) se pide aparte, solo de los que se muestran.
+  const detalle = orden.length
+    ? await supabase.from("viajes").select(SELECT_VIAJE_LISTA).in("id", orden)
+    : { data: [], error: null };
+  if (detalle.error) throw new Error(detalle.error.message);
+  const porId = new Map((detalle.data ?? []).map((fila) => [(fila as unknown as { id: string }).id, resumirViaje(fila)]));
+  const viajes = orden.flatMap((id) => porId.get(id) ?? []);
 
   const enlace = (filtro: string) => `/viajes?${new URLSearchParams({ q, f: filtro })}`;
 
@@ -92,6 +102,14 @@ export default async function Viajes({
           </li>
         ))}
       </ul>
+      {hayMas && (
+        <Link
+          href={`/viajes?${new URLSearchParams({ q, f, n: String(tope + PAGINA) })}`}
+          className="mt-4 block rounded-lg border border-primario px-3 py-3 text-center font-semibold text-primario"
+        >
+          Ver más viajes
+        </Link>
+      )}
     </main>
   );
 }

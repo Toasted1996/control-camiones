@@ -2,7 +2,9 @@ import Link from "next/link";
 import { formatoCOP } from "@/dominio/dinero";
 import { hoyBogota } from "@/lib/hoy";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
-import { resumirCobros, SELECT_COBRO } from "@/lib/consultas-cobros";
+import { resumirCobros, SELECT_COBRO, SELECT_COBRO_TRAMOS, SELECT_SALDOS, totalesCobro, VISTA_COBROS } from "@/lib/consultas-cobros";
+
+const HISTORIAL_MAX = 50;
 
 const FILTROS = [
   { valor: "pendientes", texto: "Pendientes" },
@@ -17,13 +19,33 @@ const TEXTO_ESTADO = { sin_cobrar: "Sin cobrar", cobrado: "Cobrado", abonado: "A
 export default async function Cobros({ searchParams }: { searchParams: Promise<{ f?: string }> }) {
   const { f = "pendientes" } = await searchParams;
   const supabase = await crearClienteServidor();
-  const { data, error } = await supabase.from("cuentas_cobro").select(SELECT_COBRO).eq("emitida", true).order("vence");
-  if (error) throw new Error(error.message);
+  const hoy = hoyBogota();
 
-  const { items, porCobrar, vencido } = resumirCobros(data ?? [], hoyBogota());
-  const visibles = items.filter(
-    (c) => f === "todas" || (f === "pagadas" ? c.estado === "pagado" : f === "vencidas" ? c.vencido : c.saldo > 0),
-  );
+  // Las pendientes y vencidas piden solo cuentas con saldo > 0, las más próximas a vencer primero.
+  // Pagadas y todas son historial: las más recientes, con tope.
+  let lista = supabase.from(VISTA_COBROS).select(SELECT_COBRO).eq("emitida", true);
+  if (f === "pendientes" || f === "vencidas") lista = lista.gt("saldo", 0).order("vence");
+  else lista = lista.order("vence", { ascending: false }).limit(HISTORIAL_MAX);
+  if (f === "vencidas") lista = lista.lt("vence", hoy);
+  if (f === "pagadas") lista = lista.lte("saldo", 0);
+
+  // Los totales de arriba son siempre los de todo lo pendiente, sea cual sea el filtro.
+  const [cuentas, saldos] = await Promise.all([
+    lista,
+    supabase.from(VISTA_COBROS).select(SELECT_SALDOS).eq("emitida", true).gt("saldo", 0),
+  ]);
+  for (const r of [cuentas, saldos]) if (r.error) throw new Error(r.error.message);
+
+  // Solo de las cuentas que se muestran: sus tramos, con cliente y placa.
+  const filas = cuentas.data ?? [];
+  const tramos = filas.length
+    ? await supabase.from("cuentas_cobro").select(SELECT_COBRO_TRAMOS).in("id", filas.map((c: { id: string }) => c.id))
+    : { data: [], error: null };
+  if (tramos.error) throw new Error(tramos.error.message);
+  const tramosDe = new Map((tramos.data ?? []).map((t: { id: string; tramos: unknown }) => [t.id, t.tramos]));
+
+  const visibles = resumirCobros(filas.map((c: { id: string }) => ({ ...c, tramos: tramosDe.get(c.id) })), hoy);
+  const { porCobrar, vencido } = totalesCobro(saldos.data ?? [], hoy);
 
   return (
     <main className="mx-auto w-full max-w-md space-y-4 p-4 pb-24">

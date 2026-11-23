@@ -55,10 +55,19 @@ export function estadoCobro(
   pagos: Pago[],
   hoy: string,
 ): EstadoCobro {
-  const saldo = saldoCuenta(c.total, pagos);
+  return estadoDesdeSaldo(c, saldoCuenta(c.total, pagos), pagos.length, hoy);
+}
+
+// Lo mismo cuando el saldo y la cantidad de pagos ya vienen calculados (vista cuentas_saldo).
+export function estadoDesdeSaldo(
+  c: { emitida: boolean; vence: string },
+  saldo: number,
+  nPagos: number,
+  hoy: string,
+): EstadoCobro {
   // Fechas ISO (YYYY-MM-DD): la comparación de texto equivale a la de fechas.
   const vencido = c.emitida && saldo > 0 && c.vence < hoy;
   if (!c.emitida) return { estado: "sin_cobrar", vencido };
-  if (pagos.length === 0) return { estado: "cobrado", vencido };
+  if (nPagos === 0) return { estado: "cobrado", vencido };
   return { estado: saldo > 0 ? "abonado" : "pagado", vencido };
 }
