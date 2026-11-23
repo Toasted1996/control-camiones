@@ -35,16 +35,17 @@ export function saldoCuenta(total: number, pagos: Pago[]): number {
   return total - pagos.reduce((s, p) => s + p.monto + p.retefuente + p.ica, 0);
 }
 
-// Etapa de un viaje para la lista: saldo 0 → pagado; con pagos → abonado; emitida sin pagos → cobrado;
-// sin emitir y sin pagos → sin_cobrar. `pagado` incluye retenciones y anticipo (lo que resta saldoCuenta).
+// Etapa de un viaje para la lista: saldo 0 → pagado; sin cuenta emitida → sin_cobrar (aunque tenga
+// anticipo: aún no se cobró, no debe salir de esa lista); emitida con pagos → abonado; sin pagos → cobrado.
+// `pagado` incluye retenciones y anticipo (lo que resta saldoCuenta). La vista viajes_lista (0010) repite esta regla.
 export function estadoViaje(
   total: number,
   pagado: number,
   emitida: boolean,
 ): "sin_cobrar" | "cobrado" | "abonado" | "pagado" {
   if (pagado >= total) return "pagado";
-  if (pagado > 0) return "abonado";
-  return emitida ? "cobrado" : "sin_cobrar";
+  if (!emitida) return "sin_cobrar";
+  return pagado > 0 ? "abonado" : "cobrado";
 }
 
 // Etapa de la cuenta: sin emitir → sin_cobrar; emitida sin pagos → cobrado;
