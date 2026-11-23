@@ -9,8 +9,16 @@ export const SELECT_COBRO = "id, total, emitida, fecha_emision, vence, saldo, n_
 // Cliente, placa y manifiesto se piden aparte, a la tabla (no a la vista), de las cuentas que se muestran.
 export const SELECT_COBRO_TRAMOS =
   "id, tramos(sentido, manifiesto, viaje_id, viajes(clientes(nombre), camiones(placa)))";
-// Para los totales del resumen basta esto: sin tramos ni pagos.
-export const SELECT_SALDOS = "saldo, vence";
+// Totales del resumen (por cobrar y vencido): una sola fila ya sumada en la base (vista cobros_totales),
+// para que no se corten en las 1.000 filas que devuelve la API.
+export const VISTA_TOTALES = "cobros_totales";
+export const SELECT_TOTALES = "por_cobrar, vencido";
+
+// La fila de cobros_totales como números de la app.
+export function totalesCobro(fila: unknown) {
+  const f = fila as { por_cobrar: number; vencido: number };
+  return { porCobrar: f.por_cobrar, vencido: f.vencido };
+}
 
 type Fila = {
   id: string;
@@ -29,15 +37,6 @@ type TramoFila = {
   viajes: unknown;
 };
 type ViajeFila = { clientes: unknown; camiones: unknown };
-
-// Totales del resumen a partir de las cuentas emitidas con saldo > 0 (la consulta ya las filtra).
-export function totalesCobro(filas: unknown, hoy: string) {
-  const cuentas = filas as { saldo: number; vence: string | null }[];
-  return {
-    porCobrar: cuentas.reduce((s, c) => s + Math.max(0, c.saldo), 0),
-    vencido: cuentas.filter((c) => c.saldo > 0 && (c.vence ?? hoy) < hoy).reduce((s, c) => s + c.saldo, 0),
-  };
-}
 
 // Convierte las cuentas de Supabase en tarjetas. Recibe `unknown` porque el cliente de Supabase no
 // tiene tipos generados: la forma la fija SELECT_COBRO.

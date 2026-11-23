@@ -13,7 +13,8 @@ const FILTROS = [
 const TEXTO_ESTADO = { sin_cobrar: "Sin cobrar", cobrado: "Cobrado", abonado: "Abonado", pagado: "Pagado" };
 
 const PAGINA = 20;
-const MAX = 500;
+// Tope de la lista: el detalle se pide con los ids en la URL, y con cientos la URL se pasaría de largo.
+const MAX = 100;
 
 // Lista de viajes: busca por manifiesto o cliente y filtra por estado de cobro, todo en la base
 // (vista viajes_lista). Trae de a 20, los más recientes primero; "Ver más" sube el tope (n).
@@ -102,7 +103,12 @@ export default async function Viajes({
           </li>
         ))}
       </ul>
-      {hayMas && (
+      {hayMas && tope >= MAX && (
+        <p role="note" className="mt-4 rounded-lg bg-amber-100 p-3 text-sm text-amber-900">
+          Se muestran los {MAX} viajes más recientes; hay más. Usa la búsqueda o el filtro para acotar.
+        </p>
+      )}
+      {hayMas && tope < MAX && (
         <Link
           href={`/viajes?${new URLSearchParams({ q, f, n: String(tope + PAGINA) })}`}
           className="mt-4 block rounded-lg border border-primario px-3 py-3 text-center font-semibold text-primario"

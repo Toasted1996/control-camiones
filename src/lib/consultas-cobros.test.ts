@@ -35,16 +35,7 @@ describe("resumirCobros", () => {
 });
 
 describe("totalesCobro", () => {
-  const t = totalesCobro(
-    [
-      { saldo: 600_000, vence: "2026-11-10" }, // vencida
-      { saldo: 500_000, vence: "2026-12-01" }, // vigente
-    ],
-    hoy,
-  );
-  it("suma lo que falta por cobrar", () => expect(t.porCobrar).toBe(1_100_000));
-  it("suma solo lo vencido", () => expect(t.vencido).toBe(600_000));
-  it("el mismo día de vencimiento no cuenta como vencido", () => {
-    expect(totalesCobro([{ saldo: 10, vence: hoy }], hoy).vencido).toBe(0);
+  it("pasa la fila de la vista a números de la app", () => {
+    expect(totalesCobro({ por_cobrar: 1_100_000, vencido: 600_000 })).toEqual({ porCobrar: 1_100_000, vencido: 600_000 });
   });
 });

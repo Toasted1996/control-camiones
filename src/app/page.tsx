@@ -3,7 +3,7 @@ import FondoCarretera from "@/components/FondoCarretera";
 import Placa from "@/components/Placa";
 import { formatoCOP } from "@/dominio/dinero";
 import { limitesMes, nombreMes } from "@/dominio/fechas";
-import { SELECT_SALDOS, totalesCobro, VISTA_COBROS } from "@/lib/consultas-cobros";
+import { SELECT_TOTALES, totalesCobro, VISTA_TOTALES } from "@/lib/consultas-cobros";
 import { resumirMes, SELECT_GASTOS_MES, SELECT_VIAJES_MES } from "@/lib/consultas-camiones";
 import { hoyBogota } from "@/lib/hoy";
 import { crearClienteServidor } from "@/lib/supabase/servidor";
@@ -19,14 +19,13 @@ export default async function Inicio() {
     supabase.from("camiones").select("id, placa, nombre").eq("activo", true).order("placa"),
     supabase.from("viajes").select(SELECT_VIAJES_MES).gte("fecha", desde).lt("fecha", hasta),
     supabase.from("gastos").select(SELECT_GASTOS_MES).gte("fecha", desde).lt("fecha", hasta),
-    // Solo lo que falta por cobrar y su vencimiento: sin tramos ni pagos.
-    supabase.from(VISTA_COBROS).select(SELECT_SALDOS).eq("emitida", true).gt("saldo", 0),
+    supabase.from(VISTA_TOTALES).select(SELECT_TOTALES).single(),
   ]);
   for (const r of [camiones, viajes, gastos, cuentas]) if (r.error) throw new Error(r.error.message);
 
   const porCamion = camiones.data!.map((c) => ({ ...c, ...resumirMes(viajes.data, gastos.data, c.id) }));
   const ganancia = porCamion.reduce((s, c) => s + c.ganancia, 0);
-  const { porCobrar, vencido } = totalesCobro(cuentas.data, hoy);
+  const { porCobrar, vencido } = totalesCobro(cuentas.data);
 
   return (
     // -mb-16 + pb-16: la carretera llega hasta el borde inferior, bajo el relleno que deja el layout
